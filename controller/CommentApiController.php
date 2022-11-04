@@ -2,6 +2,13 @@
 require_once 'model/ApiModel.php';
 require_once 'view/ApiView.php';
 require_once 'helpers/AuthAPIHelper.php';
+//lo traigo para conocer qué mueble es al que quiero subir un comentario
+require_once 'model/MuebleModel.php';
+/*TODO: me falta:
+*pedir el ID del mueble solicitado (me pasan un string)
+*armar un array de nombres de muebles con sus IDs (para consultar si el input coincide con alguno de los nombres (string))
+*claramente tengo que hacer muchas de estas cosas en model
+*/
 
 class CommentApiController extends ApiController
 {
@@ -35,7 +42,7 @@ class CommentApiController extends ApiController
     {
         $id = $params['id'];
         //con esto capto si no me informan el mueble
-        if (!isset($id)) {
+        if (!isset($id) && is_numeric($id)) {
             $this->view->response('Debe informar a qué mueble quiere insertar el comentario.', 400);
             return;
         }
