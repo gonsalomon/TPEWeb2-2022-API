@@ -12,7 +12,7 @@ class AuthAPIHelper
         $payload = $token[1];
         $signature = $token[2];
 
-        $new_signature = hash_hmac('SHA256', "$header.$payload", ""/*número privado, es como una clave*/, true);
+        $new_signature = hash_hmac('SHA256', "$header.$payload", "Clave1234", true);
         $new_signature = base64url_encode($new_signature);
         if ($signature != $new_signature)
             return array();
