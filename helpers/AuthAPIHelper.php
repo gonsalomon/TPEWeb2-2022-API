@@ -39,9 +39,9 @@ class AuthAPIHelper
     function getAuthHeader()
     {
         $header = '';
-        if (isset($_SERVER['HTTP_AUTHORIZATION']))
+        if (isset($_SERVER['HTTP_AUTHORIZATION']) && !empty($_SERVER['HTTP_AUTHORIZATION']))
             $header = $_SERVER['HTTP_AUTHORIZATION'];
-        if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']))
+        if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && !empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']))
             $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
         return $header;
     }
