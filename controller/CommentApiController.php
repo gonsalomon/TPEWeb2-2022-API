@@ -1,14 +1,8 @@
 <?php
+require_once 'controller/ApiController.php';
 require_once 'model/ApiModel.php';
 require_once 'view/ApiView.php';
 require_once 'helpers/AuthAPIHelper.php';
-//lo traigo para conocer qué mueble es al que quiero subir un comentario
-require_once 'model/MuebleModel.php';
-/*TODO: me falta:
-*pedir el ID del mueble solicitado (me pasan un string)
-*armar un array de nombres de muebles con sus IDs (para consultar si el input coincide con alguno de los nombres (string))
-*claramente tengo que hacer muchas de estas cosas en model
-*/
 
 class CommentApiController extends ApiController
 {
@@ -21,16 +15,28 @@ class CommentApiController extends ApiController
 
     function getComments($params = null)
     {
-        $comments = $this->model->getAll();
-        if (!empty($comments))
-            $this->view->response($comments);
-        else
-            $this->view->response('No se encontraron comentarios.', 404);
+        if (isset($_GET['sortBy'])) {
+            if (isset($_GET['sortBy']) && isset($_GET['order'])) {
+                $comments = $this->model->getAll($_GET['sortBy'], $_GET['order']);
+                if (!empty($comments))
+                    $this->view->response($comments);
+                else
+                    $this->view->response('No se encontraron comentarios.', 404);
+            } else {
+                $this->view->response('Envíe todos los parámetros requeridos.', 400);
+            }
+        } else {
+            $comments = $this->model->getAll();
+            if (!empty($comments))
+                $this->view->response($comments);
+            else
+                $this->view->response('No se encontraron comentarios.', 404);
+        }
     }
 
     function getComment($params = null)
     {
-        $id = $params['id'];
+        $id = $params[':ID'];
         $comment = $this->model->get($id);
         if ($comment)
             $this->view->response($comment);
@@ -40,29 +46,57 @@ class CommentApiController extends ApiController
 
     function insertComment($params = null)
     {
-        $id = $params['id'];
-        //con esto capto si no me informan el mueble
-        if (!isset($id) && is_numeric($id)) {
-            $this->view->response('Debe informar a qué mueble quiere insertar el comentario.', 400);
-            return;
-        }
         $commentToAdd = $this->getData();
-        //con esto si el comentario está vacío
+        //con esto reviso si el comentario está vacío o no me informan a qué mueble pertenece
         if (empty($commentToAdd->comment)) {
             $this->view->response('No se puede insertar un comentario vacío.', 400);
+        } else if (!isset($commentToAdd->id_mueble)) {
+            $this->view->response('Necesita indicar a qué id_mueble pertenece este comentario, consulte /info para obtener las id asociadas a cada mueble', 400);
         } else {
-            $id = $this->model->insert($commentToAdd->comment, false);
+            $success = $this->model->insert($commentToAdd->comment, $commentToAdd->id_mueble);
+            $this->view->response($success);
+        }
+    }
+
+    function getInfo($sendInfo = true)
+    {
+        $req = $this->model->getInfo();
+        if ($sendInfo)
+            $this->view->response($req);
+        return $req;
+    }
+
+    function editComment($params = null)
+    {
+        $id = $params[':ID'];
+        if (isset($id) && is_numeric($id)) {
+            $commentToAdd = $this->getData();
+            if (empty($commentToAdd->comment))
+                $this->view->response('No se puede insertar un comentario vacío', 400);
+            else {
+                //para checkear que un id_mueble sea válido, debo revisar si se encuentra entre los muebles existentes
+                $arr = $this->getInfo(false);
+                $contains = false;
+                foreach ($arr as $id_indiv) {
+                    if ($id_indiv['id_mueble'] === $commentToAdd->id_mueble)
+                        $contains = true;
+                }
+                if ($contains) {
+                    //recién ahora puedo editar el comentario
+                    $success = $this->model->edit($id, $commentToAdd->comment, $commentToAdd->id_mueble);
+                    $this->view->response($success);
+                } else
+                    $this->view->response('Debe indicar un id_mueble válido, vea cuáles en /info', 400);
+            }
         }
     }
 
     function deleteComment($params = null)
     {
-        $id = $params['id'];
-        if ($id)
-            $this->model->delete($id);
-        else {
+        $id = $params[':ID'];
+        if (!isset($id))
             $this->view->response('Se debe proporcionar un comentario a borrar', 401);
-            return;
-        }
+        else
+            $this->view->response($this->model->delete($id));
     }
 }
