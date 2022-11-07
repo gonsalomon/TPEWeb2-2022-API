@@ -17,12 +17,12 @@ class AuthController extends ApiController
     {
         $basic = $this->helper->getAuthHeader();
         if (empty($basic)) {
-            $this->view->response('No autorizado', 401);
+            $this->view->response('No autorizado.', 401);
             return;
         }
         $basic = explode(' ', $basic);
         if ($basic[0] != 'Basic') {
-            $this->view->response('La autenticación debe ser Basic', 401);
+            $this->view->response('La autenticación debe ser Basic!', 401);
             return;
         }
         $userpass = base64_decode($basic[1]);
