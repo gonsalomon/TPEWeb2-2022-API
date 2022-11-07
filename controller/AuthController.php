@@ -3,22 +3,19 @@ require_once 'model/ApiModel.php';
 require_once 'view/ApiView.php';
 require_once 'helpers/AuthAPIHelper.php';
 
-function base64url_encode($data)
-{
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
 class AuthController extends ApiController
 {
     private $helper;
+    protected $view;
     function __construct()
     {
         $this->helper = new AuthAPIHelper();
+        $this->view = new ApiView();
     }
 
     function getToken($params = null)
     {
-        $basic = $this->authHelper->getAuthHeader();
+        $basic = $this->helper->getAuthHeader();
         if (empty($basic)) {
             $this->view->response('No autorizado', 401);
             return;

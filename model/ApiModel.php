@@ -11,10 +11,10 @@ class ApiModel
     function getAll($sortBy = null, $order = null)
     {
         if (isset($sortBy) && isset($order)) {
-            $req = $this->db->prepare("SELECT * from comments ORDER BY $sortBy $order");
+            $req = $this->db->prepare("SELECT * FROM comments ORDER BY $sortBy $order");
             $req->execute();
         } else {
-            $req = $this->db->prepare('SELECT * from comments');
+            $req = $this->db->prepare('SELECT * FROM comments');
             $req->execute();
         }
         return $req->fetchAll(PDO::FETCH_OBJ);
@@ -22,10 +22,17 @@ class ApiModel
 
     function get($id)
     {
-        $req = $this->db->prepare('SELECT * from comments WHERE id = ?');
+        $req = $this->db->prepare('SELECT * FROM comments WHERE id = ?');
         $req->execute([$id]);
 
         return $req->fetch(PDO::FETCH_OBJ);
+    }
+
+    function getFromMueble($id)
+    {
+        $req = $this->db->prepare('SELECT * FROM comments WHERE id_mueble = ?');
+        $req->execute($id);
+        return $req->fetchAll(PDO::FETCH_OBJ);
     }
 
     function insert($comment, $id_mueble)
@@ -33,8 +40,8 @@ class ApiModel
         if ($id_mueble) {
             $req = $this->db->prepare('INSERT INTO comments (comment, id_mueble) VALUES (?,?)');
             $req->execute([$comment, $id_mueble]);
-
-            return $this->getAll();
+            //devuelvo el comentario recién añadido
+            return $this->get($this->db->lastInsertId());
         }
         return null;
     }
@@ -44,7 +51,8 @@ class ApiModel
     {
         $req = $this->db->prepare('SELECT id_mueble, mueble FROM mueble');
         $req->execute();
-        return $req->fetchAll();
+        $res = $req->fetchAll(PDO::FETCH_OBJ);
+        return $res;
     }
 
     function edit($id, $comment, $id_mueble)

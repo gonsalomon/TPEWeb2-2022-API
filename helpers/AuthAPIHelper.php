@@ -1,7 +1,13 @@
 <?php
+
+function base64url_encode($data)
+{
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
 class AuthAPIHelper
 {
-    function getToken($params = null)
+    private function getToken($params = null)
     {
         $auth = $this->getAuthHeader();
         $auth = explode(' ', $auth);
