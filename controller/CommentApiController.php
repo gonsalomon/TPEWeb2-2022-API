@@ -15,16 +15,52 @@ class CommentApiController extends ApiController
 
     function getComments($params = null)
     {
-        if (isset($_GET['sortBy'])) {
+        //1- hay alguno de los campos pertenecientes al ordenamiento? (un campo por el que ordenar, y si el orden es ASC/DESC)
+        if (isset($_GET['sortBy']) || isset($_GET['order'])) {
+            //1.1- están todos?
             if (isset($_GET['sortBy']) && isset($_GET['order'])) {
-                $comments = $this->model->getAll($_GET['sortBy'], $_GET['order']);
+                //1.2- son del tipo correspondiente?
+                if ($_GET['order'] == 'asc' || $_GET['order'] == 'ASC' || $_GET['order'] == 'desc' || $_GET['order'] == 'DESC') {
+                    if (is_string($_GET['sortBy']) && in_array($_GET['sortBy'], $this->model->getTableFields())) {
+                        $comments = $this->model->getAll($_GET['sortBy'], $_GET['order'], null, null, null, null);
+                        if (!empty($comments))
+                            $this->view->response($comments);
+                        else
+                            $this->view->response('No se encontraron comentarios.', 404);
+                    } else
+                        $this->view->response('El campo por el que se quiere ordenar no está bien escrito, intente nuevamente.', 400);
+                } else
+                    $this->view->response('El orden informado debe ser "asc" o "desc", intente nuevamente.', 400);
+            } else {
+                $this->view->response('Envíe todos los parámetros requeridos.', 400);
+            }
+        }
+        //2- quiero paginar? (necesito saber cuántos elementos por página)
+        else if (isset($_GET['size'])) {
+            //2.1- es un número?
+            if (is_numeric($_GET['size'])) {
+                $size = isset($_GET['size']);
+                for ($i = 0; $i < count($this->model->getAll()) / $size; $i++) {
+                    $pages[$i] = $this->model->getAll(null, null, $i, $size, null, null);
+                }
+                if (!empty($pages))
+                    $this->view->response($pages);
+                else
+                    $this->view->response('No se encontraron comentarios.', 404);
+            } else
+                $this->view->response('Error de formato en los datos enviados', 400);
+        }
+        //3- quiero filtrar?
+        else if (isset($_GET['filterBy']) || isset($_GET['value'])) {
+            //3.1- están todos los datos?
+            if (isset($_GET['filterBy']) && isset($_GET['value'])) {
+                $comments = $this->model->getAll(null, null, null, null, $_GET['filterBy'], $_GET['value']);
                 if (!empty($comments))
                     $this->view->response($comments);
                 else
                     $this->view->response('No se encontraron comentarios.', 404);
-            } else {
-                $this->view->response('Envíe todos los parámetros requeridos.', 400);
-            }
+            } else
+                $this->view->response('Error de formato en los datos enviados', 400);
         } else {
             $comments = $this->model->getAll();
             if (!empty($comments))
@@ -66,7 +102,7 @@ class CommentApiController extends ApiController
                 $this->view->response('Necesita indicar a qué id_mueble pertenece este comentario, consulte /info para obtener las id asociadas a cada mueble', 400);
             } else {
                 $success = $this->model->insert($commentToAdd->comment, $commentToAdd->id_mueble);
-                $this->view->response($success);
+                $this->view->response($success, 201);
             }
         } else {
             $this->view->response('No autorizado. Solicite JWT mediante /auth.', 401);

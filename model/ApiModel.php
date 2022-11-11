@@ -8,21 +8,43 @@ class ApiModel
         $this->db = new PDO('mysql:host=localhost;' . 'dbname=db_mueble;charset=utf8', 'root', '');
     }
 
-    function getAll($sortBy = null, $order = null)
+    function getAll($sortBy = null, $order = null, $page = null, $size = null, $filter = null, $value = null)
     {
+        //ordenamiento
         if (isset($sortBy) && isset($order)) {
-            $req = $this->db->prepare("SELECT * FROM comments ORDER BY $sortBy $order");
+            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble ORDER BY $sortBy $order");
             $req->execute();
-        } else {
-            $req = $this->db->prepare('SELECT * FROM comments');
+        }
+        //paginación
+        else if (isset($page) && isset($size)) {
+            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble ORDER BY (SELECT NULL) OFFSET $page*$size ROWS FETCH NEXT $size ROWS ONLY");
+            $req->execute();
+        }
+        //filtrado
+        else if (false) {
+            //TODO
+        }
+        //caso general
+        else {
+            $req = $this->db->prepare('SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble');
             $req->execute();
         }
         return $req->fetchAll(PDO::FETCH_OBJ);
     }
 
+    function getTableFields()
+    {
+        $req = $this->db->query('SELECT * FROM comments LIMIT 0');
+        for ($i = 0; $i < $req->columnCount(); $i++) {
+            $col = $req->getColumnMeta($i);
+            $columns[] = $col['name'];
+        }
+        return $columns;
+    }
+
     function get($id)
     {
-        $req = $this->db->prepare('SELECT * FROM comments WHERE id = ?');
+        $req = $this->db->prepare('SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble WHERE id = ?');
         $req->execute([$id]);
 
         return $req->fetch(PDO::FETCH_OBJ);
@@ -30,7 +52,7 @@ class ApiModel
 
     function getFromMueble($id)
     {
-        $req = $this->db->prepare('SELECT * FROM comments WHERE id_mueble = ?');
+        $req = $this->db->prepare('SELECT id, comment, comments.id_mueble, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble WHERE id_mueble = ?');
         $req->execute($id);
         return $req->fetchAll(PDO::FETCH_OBJ);
     }
@@ -65,9 +87,10 @@ class ApiModel
 
     function delete($id)
     {
+        $elemToDelete = $this->get($id);
         $req = $this->db->prepare('DELETE FROM comments WHERE id = ?');
         $req->execute([$id]);
-        //devuelvo todos los elementos (el usuario puede constatar que el elemento que solicitó ya no se encuentra)
-        return $this->getAll();
+        //devuelvo el elemento que acabo de borrar
+        return $elemToDelete;
     }
 }
