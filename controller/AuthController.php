@@ -6,15 +6,15 @@ require_once 'helpers/AuthAPIHelper.php';
 class AuthController extends ApiController
 {
     private $helper;
-    protected $view;
     function __construct()
     {
         $this->helper = new AuthAPIHelper();
-        $this->view = new ApiView();
     }
 
+    //el corazón de los JWT
     function getToken($params = null)
     {
+        //reviso que sea autenticación Basic
         $basic = $this->helper->getAuthHeader();
         if (empty($basic)) {
             $this->view->response('No autorizado.', 401);

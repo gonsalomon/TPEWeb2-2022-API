@@ -19,49 +19,81 @@ class CommentApiController extends ApiController
         if (isset($_GET['sortBy']) || isset($_GET['order'])) {
             //1.1- están todos?
             if (isset($_GET['sortBy']) && isset($_GET['order'])) {
-                //1.2- son del tipo correspondiente?
+                //1.2- son válidos los datos? tengo que checkear dato por dato
                 if ($_GET['order'] == 'asc' || $_GET['order'] == 'ASC' || $_GET['order'] == 'desc' || $_GET['order'] == 'DESC') {
+                    //order pasó
                     if (is_string($_GET['sortBy']) && in_array($_GET['sortBy'], $this->model->getTableFields())) {
-                        $comments = $this->model->getAll($_GET['sortBy'], $_GET['order'], null, null, null, null);
+                        //sortBy pasó: mando datos al modelo
+                        $comments = $this->model->getAll($_GET['sortBy'], $_GET['order'], null, null, null, null, null);
                         if (!empty($comments))
                             $this->view->response($comments);
                         else
                             $this->view->response('No se encontraron comentarios.', 404);
                     } else
-                        $this->view->response('El campo por el que se quiere ordenar no está bien escrito, intente nuevamente.', 400);
+                        $this->view->response('El campo por el que se quiere ordenar no está bien escrito.', 400);
                 } else
-                    $this->view->response('El orden informado debe ser "asc" o "desc", intente nuevamente.', 400);
+                    $this->view->response('El orden informado debe ser "asc", "ASC", "desc" o "DESC".', 400);
             } else {
-                $this->view->response('Envíe todos los parámetros requeridos.', 400);
+                $this->view->response('Debe enviar todos los datos requeridos (sortBy, order).', 400);
             }
         }
-        //2- quiero paginar? (necesito saber cuántos elementos por página)
+        //2- quiero paginar? (necesito saber cuántos elementos por página, la página indicada es para el funcionamiento interno)
         else if (isset($_GET['size'])) {
             //2.1- es un número?
             if (is_numeric($_GET['size'])) {
                 $size = isset($_GET['size']);
                 for ($i = 0; $i < count($this->model->getAll()) / $size; $i++) {
-                    $pages[$i] = $this->model->getAll(null, null, $i, $size, null, null);
+                    //al desconocer el funcionamiento del paginado de php, no me quedó otra opción que traer página por página
+                    $pages[$i] = $this->model->getAll(null, null, $i, $size, null, null, null);
                 }
                 if (!empty($pages))
                     $this->view->response($pages);
                 else
                     $this->view->response('No se encontraron comentarios.', 404);
             } else
-                $this->view->response('Error de formato en los datos enviados', 400);
+                $this->view->response('Envíe un número de comentarios por página.', 400);
         }
         //3- quiero filtrar?
-        else if (isset($_GET['filterBy']) || isset($_GET['value'])) {
-            //3.1- están todos los datos?
-            if (isset($_GET['filterBy']) && isset($_GET['value'])) {
-                $comments = $this->model->getAll(null, null, null, null, $_GET['filterBy'], $_GET['value']);
-                if (!empty($comments))
-                    $this->view->response($comments);
-                else
-                    $this->view->response('No se encontraron comentarios.', 404);
+        else if (isset($_GET['filterBy']) || isset($_GET['value']) || isset($_GET['cond'])) {
+            //3.1- están TODOS?
+            if (isset($_GET['filterBy']) && isset($_GET['value']) && isset($_GET['cond'])) {
+                //3.2- son válidos los datos? tengo que checkear dato por dato
+                if (is_string($_GET['filterBy']) && in_array($_GET['filterBy'], $this->model->getTableFields())) {
+                    //filterBy pasó
+                    if (is_string($_GET['value']) || is_numeric($_GET['value'])) {
+                        //value pasó
+                        if ($_GET['cond'] == 'V' || $_GET['cond'] == 'v' || $_GET['cond'] == 'F' || $_GET['cond'] == 'f') {
+                            //cond pasó: mando datos al modelo
+                            $req = $this->model->getAll(null, null, null, null, $_GET['filterBy'], $_GET['value'], $_GET['cond']);
+                        } else {
+                            //cond no pasó
+                            $this->view->response('cond debe ser V / v (que incluya a value) o F / f (que no lo haga), intente nuevamente.', 400);
+                        }
+                    } else {
+                        //value no pasó
+                        $this->view->response('value debe ser un string o un número que se busque incluir o excluir del resultado, intente nuevamente.', 400);
+                    }
+                } else {
+                    //filterBy no pasó
+                    $this->view->response('filterBy debe ser un string de uno de los campos solicitables, intente nuevamente.', 400);
+                }
+                //puedo no haber seteado $req hasta ahora, checkeo porsi
+                if ($req) {
+                    $req->execute();
+                    $comments = $req->fetchAll(PDO::FETCH_OBJ);
+                    if (!empty($comments))
+                        //hay resultados :)
+                        $this->view->response($comments);
+                    else
+                        //no los hay :(
+                        $this->view->response('No se encontraron comentarios.', 404);
+                }
             } else
-                $this->view->response('Error de formato en los datos enviados', 400);
-        } else {
+                //no están todos los datos
+                $this->view->response('Debe enviar todos los datos requeridos (filterBy, value, cond).', 400);
+        }
+        //si no hay ningún campo informado, es un GET all común y corriente
+        else {
             $comments = $this->model->getAll();
             if (!empty($comments))
                 $this->view->response($comments);
@@ -82,17 +114,22 @@ class CommentApiController extends ApiController
 
     function getMuebleComments($params = null)
     {
-        $id = $params[':ID'];
-        $mueble = $this->model->getFromMueble($id);
-        if ($mueble) {
-            $this->view->response($mueble);
+        if (isset($params[':ID'])) {
+            $id = $params[':ID'];
+            $mueble = $this->model->getFromMueble($id);
+            if ($mueble) {
+                $this->view->response($mueble);
+            } else {
+                $this->view->response("El mueble con el id $id no tiene comentarios.", 404);
+            }
         } else {
-            $this->view->response("El mueble con el id $id no tiene comentarios.", 404);
+            $this->view->response("Debe informar de qué mueble desea obtener comentarios.", 400);
         }
     }
 
     function insertComment($params = null)
     {
+        //comentar líneas 133, 144-146 para anular JWT y probar POST
         if ($this->helper->checkLoggedIn()) {
             $commentToAdd = $this->getData();
             //con esto reviso si el comentario está vacío o no me informan a qué mueble pertenece
@@ -122,6 +159,7 @@ class CommentApiController extends ApiController
 
     function editComment($params = null)
     {
+        //comentar líneas 163, 185-187 para anular JWT y probar PUT
         if ($this->helper->checkLoggedIn()) {
             $id = $params[':ID'];
             if (isset($id) && is_numeric($id)) {

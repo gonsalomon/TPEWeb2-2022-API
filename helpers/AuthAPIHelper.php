@@ -7,6 +7,7 @@ function base64url_encode($data)
 
 class AuthAPIHelper
 {
+    //se emplea únicamente en checkLoggedIn, al ser interna se la califica como private
     private function getToken($params = null)
     {
         $auth = $this->getAuthHeader();
@@ -30,12 +31,14 @@ class AuthAPIHelper
         return $payload;
     }
 
+    //la mejor idea que se pudo haber tenido con un helper
     function checkLoggedIn()
     {
         $payload = $this->getToken();
         return isset($payload['id']);
     }
 
+    //pequeña ayuda para evitar redundancia de código en otros lugares
     function getAuthHeader()
     {
         $header = '';
