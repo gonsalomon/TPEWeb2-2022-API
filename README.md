@@ -64,7 +64,7 @@ Comentario para los profes que no se incluiría en un README.md estándar:
     lo que devolvería un token. Dicho token debe almacenarse para su uso posterior (un request POST/PUT sin token da un 401, comentar las líneas de checkLoggedIn en el controller para testear dichos métodos REST).
     Los datos de autenticación son
     {
-        'user': 'admin',
-        'pass': 'admin'
-    },
-    a insertarse vía Thunder (extensión de VSCode).
+        'Username': 'admin',
+        'Password': 'admin'
+    }
+    ,a insertarse vía Thunder (extensión de VSCode).
