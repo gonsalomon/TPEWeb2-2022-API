@@ -66,4 +66,5 @@ Comentario para los profes que no se incluiría en un README.md estándar:
     {
         'user': 'admin',
         'pass': 'admin'
-    }
+    },
+    a insertarse vía Thunder (extensión de VSCode).
