@@ -68,3 +68,5 @@ Comentario para los profes que no se incluiría en un README.md estándar:
         'Password': 'admin'
     }
     ,a insertarse vía Thunder (extensión de VSCode).
+
+    De no funcionar el JWT, favor de comentar las líneas especificadas en el controller para probar tanto POST como PUT.

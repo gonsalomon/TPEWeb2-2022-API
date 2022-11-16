@@ -124,7 +124,7 @@ class CommentApiController extends ApiController
 
     function insertComment($params = null)
     {
-        //comentar líneas 133, 144-146 para anular JWT y probar POST
+        //comentar líneas 128, 139-141 para anular verificación de JWT y poder probar POST
         if ($this->helper->checkLoggedIn()) {
             $commentToAdd = $this->getData();
             //con esto reviso si el comentario está vacío o no me informan a qué mueble pertenece
@@ -154,7 +154,7 @@ class CommentApiController extends ApiController
 
     function editComment($params = null)
     {
-        //comentar líneas 163, 185-187 para anular JWT y probar PUT
+        //comentar líneas 158, 180-182 para anular verificación de JWT y poder probar PUT
         if ($this->helper->checkLoggedIn()) {
             $id = $params[':ID'];
             if (isset($id) && is_numeric($id)) {
