@@ -25,7 +25,7 @@ class CommentApiController extends ApiController
                     if (is_string($_GET['sortBy']) && in_array($_GET['sortBy'], $this->model->getTableFields())) {
                         //sortBy pasó: mando datos al modelo
                         $comments = $this->model->getAll($_GET['sortBy'], $_GET['order'], null, null, null, null, null);
-                        if (!empty($comments))
+                        if (isset($comments) && !empty($comments))
                             $this->view->response($comments);
                         else
                             $this->view->response('No se encontraron comentarios.', 404);
@@ -41,10 +41,10 @@ class CommentApiController extends ApiController
         else if (isset($_GET['size'])) {
             //2.1- es un número?
             if (is_numeric($_GET['size'])) {
-                $size = isset($_GET['size']);
+                $size = $_GET['size'];
                 for ($i = 0; $i < count($this->model->getAll()) / $size; $i++) {
                     //al desconocer el funcionamiento del paginado de php, no me quedó otra opción que traer página por página
-                    $pages[$i] = $this->model->getAll(null, null, $i, $size, null, null, null);
+                    $pages[$i] = $this->model->getAll(null, null, $i, intval($size), null, null, null);
                 }
                 if (!empty($pages))
                     $this->view->response($pages);
@@ -64,7 +64,7 @@ class CommentApiController extends ApiController
                         //value pasó
                         if ($_GET['cond'] == 'V' || $_GET['cond'] == 'v' || $_GET['cond'] == 'F' || $_GET['cond'] == 'f') {
                             //cond pasó: mando datos al modelo
-                            $req = $this->model->getAll(null, null, null, null, $_GET['filterBy'], $_GET['value'], $_GET['cond']);
+                            $comments = $this->model->getAll(null, null, null, null, $_GET['filterBy'], $_GET['value'], $_GET['cond']);
                         } else {
                             //cond no pasó
                             $this->view->response('cond debe ser V / v (que incluya a value) o F / f (que no lo haga), intente nuevamente.', 400);
@@ -77,17 +77,12 @@ class CommentApiController extends ApiController
                     //filterBy no pasó
                     $this->view->response('filterBy debe ser un string de uno de los campos solicitables, intente nuevamente.', 400);
                 }
-                //puedo no haber seteado $req hasta ahora, checkeo porsi
-                if ($req) {
-                    $req->execute();
-                    $comments = $req->fetchAll(PDO::FETCH_OBJ);
-                    if (!empty($comments))
-                        //hay resultados :)
-                        $this->view->response($comments);
-                    else
-                        //no los hay :(
-                        $this->view->response('No se encontraron comentarios.', 404);
-                }
+                if (!empty($comments))
+                    //hay resultados :)
+                    $this->view->response($comments);
+                else
+                    //no los hay :(
+                    $this->view->response('No se encontraron comentarios.', 404);
             } else
                 //no están todos los datos
                 $this->view->response('Debe enviar todos los datos requeridos (filterBy, value, cond).', 400);

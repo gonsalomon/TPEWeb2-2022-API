@@ -41,7 +41,8 @@ class AuthController extends ApiController
             );
             $header = base64url_encode(json_encode($header));
             $payload = base64url_encode(json_encode($payload));
-            $signature = hash_hmac('SHA256', "$header.$payload", 'Clave1234', true);
+            $signature = hash_hmac('SHA256', "$header.$payload", "Clave1234", true);
+            $signature = base64url_encode($signature);
             $token = "$header.$payload.$signature";
             $this->view->response($token);
         } else {

@@ -13,32 +13,35 @@ class ApiModel
         //ordenamiento
         if (isset($sortBy) && isset($order)) {
             $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble ORDER BY $sortBy $order");
-            $req->execute();
         }
         //paginación (como comento en el controller, traigo $size filas de la base de datos de acuerdo a qué página me dice $page que corresponde enviar)
         else if (isset($page) && isset($size)) {
-            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble ORDER BY (SELECT NULL) OFFSET $page*$size ROWS FETCH NEXT $size ROWS ONLY");
-            $req->execute();
+            $offset = ($page * $size);
+            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble ORDER BY id LIMIT $size OFFSET $offset");
         }
         //filtrado
         else if (isset($filterBy) && isset($value) && isset($cond)) {
-            //AGUANTEN LAS TERNARIAS
-            $parsedCond = ($cond == 'V' || $cond == 'v') ? '=' : '<>';
-            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble WHERE $filterBy $parsedCond $value");
-            $req->execute();
+            if ($cond == 'V' || $cond == 'v') {
+                $parsedCond = '=';
+            } else if ($cond == 'F' || $cond == 'f') {
+                $parsedCond = '<>';
+            } else {
+                return null;
+            }
+            $req = $this->db->prepare("SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble WHERE $filterBy $parsedCond '$value'");
         }
         //caso general
         else {
             $req = $this->db->prepare('SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble');
-            $req->execute();
         }
+        $req->execute();
         return $req->fetchAll(PDO::FETCH_OBJ);
     }
 
     //traigo los nombres de los campos para checkear que los parámetros GET tengan sentido
     function getTableFields()
     {
-        $req = $this->db->query('SELECT * FROM comments LIMIT 0');
+        $req = $this->db->query('SELECT id, comment, mueble FROM comments LEFT JOIN mueble ON comments.id_mueble=mueble.id_mueble LIMIT 0');
         for ($i = 0; $i < $req->columnCount(); $i++) {
             $col = $req->getColumnMeta($i);
             $columns[] = $col['name'];
