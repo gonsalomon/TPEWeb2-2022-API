@@ -43,7 +43,7 @@ class CommentApiController extends ApiController
             if (is_numeric($_GET['size'])) {
                 $size = $_GET['size'];
                 for ($i = 0; $i < count($this->model->getAll()) / $size; $i++) {
-                    //al desconocer el funcionamiento del paginado de php, no me quedó otra opción que traer página por página
+                    //al desconocer el funcionamiento del paginado de php, no me quedó otra opción que traer página por página, sé que lo vamos a ver en bases de datos
                     $pages[$i] = $this->model->getAll(null, null, $i, intval($size), null, null, null);
                 }
                 if (!empty($pages))
